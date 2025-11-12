@@ -17,6 +17,7 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
   # Installing webp also installs a non-turbo jpeg, so we uninstall jpeg stuff
   # before re-installing them
   conda uninstall libjpeg-turbo libjpeg -y
+  conda install -y ffmpeg=4.2 -c pytorch
   conda install -y libjpeg-turbo -c pytorch
 
   # Copy binaries to be included in the wheel distribution
@@ -29,7 +30,7 @@ else
 
   if [[ "$ARCH" == "aarch64" ]]; then
     conda install libpng -y
-    conda install -y libjpeg-turbo -c pytorch-nightly
+    conda install -y ffmpeg=4.2 libjpeg-turbo -c pytorch-nightly
   fi
 
   conda install libwebp -y

@@ -1,8 +1,7 @@
 import abc
 import importlib
 import pathlib
-from collections.abc import Collection, Iterator, Sequence
-from typing import Any, Optional, Union
+from typing import Any, Collection, Dict, Iterator, List, Optional, Sequence, Union
 
 from torchdata.datapipes.iter import IterDataPipe
 from torchvision.datasets.utils import verify_str_arg
@@ -10,7 +9,7 @@ from torchvision.datasets.utils import verify_str_arg
 from ._resource import OnlineResource
 
 
-class Dataset(IterDataPipe[dict[str, Any]], abc.ABC):
+class Dataset(IterDataPipe[Dict[str, Any]], abc.ABC):
     @staticmethod
     def _verify_str_arg(
         value: str,
@@ -39,15 +38,15 @@ class Dataset(IterDataPipe[dict[str, Any]], abc.ABC):
         ]
         self._dp = self._datapipe(resources)
 
-    def __iter__(self) -> Iterator[dict[str, Any]]:
+    def __iter__(self) -> Iterator[Dict[str, Any]]:
         yield from self._dp
 
     @abc.abstractmethod
-    def _resources(self) -> list[OnlineResource]:
+    def _resources(self) -> List[OnlineResource]:
         pass
 
     @abc.abstractmethod
-    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
         pass
 
     @abc.abstractmethod

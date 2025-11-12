@@ -3,8 +3,6 @@
 #include <torch/autograd.h>
 #include <torch/types.h>
 
-#include <utility>
-
 namespace vision {
 namespace ops {
 
@@ -20,14 +18,14 @@ class DeformConv2dFunction
       const torch::autograd::Variable& offset,
       const torch::autograd::Variable& mask,
       const torch::autograd::Variable& bias,
-      const c10::SymInt& stride_h,
-      const c10::SymInt& stride_w,
-      const c10::SymInt& pad_h,
-      const c10::SymInt& pad_w,
-      const c10::SymInt& dilation_h,
-      const c10::SymInt& dilation_w,
-      const c10::SymInt& groups,
-      const c10::SymInt& offset_groups,
+      c10::SymInt stride_h,
+      c10::SymInt stride_w,
+      c10::SymInt pad_h,
+      c10::SymInt pad_w,
+      c10::SymInt dilation_h,
+      c10::SymInt dilation_w,
+      c10::SymInt groups,
+      c10::SymInt offset_groups,
       bool use_mask) {
     at::AutoDispatchBelowADInplaceOrView g;
     auto output = deform_conv2d_symint(
@@ -152,14 +150,14 @@ class DeformConv2dBackwardFunction
         offset,
         mask,
         bias,
-        std::move(stride_h),
-        std::move(stride_w),
-        std::move(pad_h),
-        std::move(pad_w),
-        std::move(dilation_h),
-        std::move(dilation_w),
-        std::move(groups),
-        std::move(offset_groups),
+        stride_h,
+        stride_w,
+        pad_h,
+        pad_w,
+        dilation_h,
+        dilation_w,
+        groups,
+        offset_groups,
         use_mask);
 
     auto grad_input = std::get<0>(result);

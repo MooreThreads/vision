@@ -1,5 +1,6 @@
 #include "subtitle_stream.h"
 #include <c10/util/Logging.h>
+#include <limits>
 #include "util.h"
 
 namespace ffmpeg {

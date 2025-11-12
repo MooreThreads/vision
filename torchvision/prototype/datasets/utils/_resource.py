@@ -2,8 +2,7 @@ import abc
 import hashlib
 import itertools
 import pathlib
-from collections.abc import Sequence
-from typing import Any, Callable, IO, Literal, NoReturn, Optional, Union
+from typing import Any, Callable, IO, Literal, NoReturn, Optional, Sequence, Set, Tuple, Union
 from urllib.parse import urlparse
 
 from torchdata.datapipes.iter import (
@@ -57,7 +56,7 @@ class OnlineResource(abc.ABC):
     def _decompress(file: pathlib.Path) -> None:
         _decompress(str(file), remove_finished=True)
 
-    def _loader(self, path: pathlib.Path) -> IterDataPipe[tuple[str, IO]]:
+    def _loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
         if path.is_dir():
             return FileOpener(FileLister(str(path), recursive=True), mode="rb")
 
@@ -77,7 +76,7 @@ class OnlineResource(abc.ABC):
 
     def _guess_archive_loader(
         self, path: pathlib.Path
-    ) -> Optional[Callable[[IterDataPipe[tuple[str, IO]]], IterDataPipe[tuple[str, IO]]]]:
+    ) -> Optional[Callable[[IterDataPipe[Tuple[str, IO]]], IterDataPipe[Tuple[str, IO]]]]:
         try:
             _, archive_type, _ = _detect_file_type(path.name)
         except RuntimeError:
@@ -86,7 +85,7 @@ class OnlineResource(abc.ABC):
 
     def load(
         self, root: Union[str, pathlib.Path], *, skip_integrity_check: bool = False
-    ) -> IterDataPipe[tuple[str, IO]]:
+    ) -> IterDataPipe[Tuple[str, IO]]:
         root = pathlib.Path(root)
         path = root / self.file_name
 
@@ -95,7 +94,7 @@ class OnlineResource(abc.ABC):
         # is not sufficient for files with multiple suffixes, e.g. foo.tar.gz.
         stem = path.name.replace("".join(path.suffixes), "")
 
-        def find_candidates() -> set[pathlib.Path]:
+        def find_candidates() -> Set[pathlib.Path]:
             # Although it looks like we could glob for f"{stem}*" to find the file candidates as well as the folder
             # candidate simultaneously, that would also pick up other files that share the same prefix. For example, the
             # test split of the stanford-cars dataset uses the files

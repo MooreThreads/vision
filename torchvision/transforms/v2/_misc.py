@@ -1,6 +1,5 @@
 import warnings
-from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import PIL.Image
 
@@ -15,7 +14,7 @@ from ._utils import _parse_labels_getter, _setup_number_or_seq, _setup_size, get
 
 # TODO: do we want/need to expose this?
 class Identity(Transform):
-    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return inpt
 
 
@@ -30,12 +29,12 @@ class Lambda(Transform):
 
     _transformed_types = (object,)
 
-    def __init__(self, lambd: Callable[[Any], Any], *types: type):
+    def __init__(self, lambd: Callable[[Any], Any], *types: Type):
         super().__init__()
         self.lambd = lambd
         self.types = types or self._transformed_types
 
-    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(inpt, self.types):
             return self.lambd(inpt)
         else:
@@ -104,7 +103,7 @@ class LinearTransformation(Transform):
         if has_any(sample, PIL.Image.Image):
             raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 
-    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         shape = inpt.shape
         n = shape[-3] * shape[-2] * shape[-1]
         if n != self.transformation_matrix.shape[0]:
@@ -162,7 +161,7 @@ class Normalize(Transform):
         if has_any(sample, PIL.Image.Image):
             raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 
-    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.normalize, inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 
@@ -198,11 +197,11 @@ class GaussianBlur(Transform):
         if not 0.0 < self.sigma[0] <= self.sigma[1]:
             raise ValueError(f"sigma values should be positive and of the form (min, max). Got {self.sigma}")
 
-    def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
         return dict(sigma=[sigma, sigma])
 
-    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.gaussian_blur, inpt, self.kernel_size, **params)
 
 
@@ -214,22 +213,13 @@ class GaussianNoise(Transform):
     Each image or frame in a batch will be transformed independently i.e. the
     noise added to each image will be different.
 
-    The input tensor is also expected to be of float dtype in ``[0, 1]``,
-    or of ``uint8`` dtype in ``[0, 255]``. This transform does not support PIL
-    images.
-
-    Regardless of the dtype used, the parameters of the function use the same
-    scale, so a ``mean`` parameter of 0.5 will result in an average value
-    increase of 0.5 units for float images, and an average increase of 127.5
-    units for ``uint8`` images.
+    The input tensor is also expected to be of float dtype in ``[0, 1]``.
+    This transform does not support PIL images.
 
     Args:
         mean (float): Mean of the sampled normal distribution. Default is 0.
         sigma (float): Standard deviation of the sampled normal distribution. Default is 0.1.
-        clip (bool, optional): Whether to clip the values after adding noise, be it to
-            ``[0, 1]`` for floats or to ``[0, 255]`` for ``uint8``. Setting this parameter to
-            ``False`` may cause unsigned integer overflows with uint8 inputs.
-            Default is True.
+        clip (bool, optional): Whether to clip the values in ``[0, 1]`` after adding noise. Default is True.
     """
 
     def __init__(self, mean: float = 0.0, sigma: float = 0.1, clip=True) -> None:
@@ -238,7 +228,7 @@ class GaussianNoise(Transform):
         self.sigma = sigma
         self.clip = clip
 
-    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.gaussian_noise, inpt, mean=self.mean, sigma=self.sigma, clip=self.clip)
 
 
@@ -262,7 +252,7 @@ class ToDtype(Transform):
     _transformed_types = (torch.Tensor,)
 
     def __init__(
-        self, dtype: Union[torch.dtype, dict[Union[type, str], Optional[torch.dtype]]], scale: bool = False
+        self, dtype: Union[torch.dtype, Dict[Union[Type, str], Optional[torch.dtype]]], scale: bool = False
     ) -> None:
         super().__init__()
 
@@ -282,7 +272,7 @@ class ToDtype(Transform):
         self.dtype = dtype
         self.scale = scale
 
-    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(self.dtype, torch.dtype):
             # For consistency / BC with ConvertImageDtype, we only care about images or videos when dtype
             # is a simple torch.dtype
@@ -345,7 +335,7 @@ class ConvertImageDtype(Transform):
         super().__init__()
         self.dtype = dtype
 
-    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.to_dtype, inpt, dtype=self.dtype, scale=True)
 
 
@@ -446,7 +436,7 @@ class SanitizeBoundingBoxes(Transform):
 
         return tree_unflatten(flat_outputs, spec)
 
-    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         is_label = params["labels"] is not None and any(inpt is label for label in params["labels"])
         is_bounding_boxes_or_mask = isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask))
 

@@ -1,4 +1,3 @@
-// @nolint (improperly imported third-party code)
 /******************************************************************************
 
 gif_lib.h - service library for decoding and encoding GIF images

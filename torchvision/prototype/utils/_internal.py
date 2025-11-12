@@ -3,8 +3,7 @@ import difflib
 import io
 import mmap
 import platform
-from collections.abc import Collection, Sequence
-from typing import BinaryIO, Callable, TypeVar, Union
+from typing import BinaryIO, Callable, Collection, Sequence, TypeVar, Union
 
 import numpy as np
 import torch

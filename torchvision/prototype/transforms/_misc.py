@@ -1,8 +1,7 @@
 import functools
 import warnings
 from collections import defaultdict
-from collections.abc import Sequence
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Dict, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import torch
 
@@ -19,7 +18,7 @@ def _default_arg(value: T) -> T:
     return value
 
 
-def _get_defaultdict(default: T) -> dict[Any, T]:
+def _get_defaultdict(default: T) -> Dict[Any, T]:
     # This weird looking construct only exists, since `lambda`'s cannot be serialized by pickle.
     # If it were possible, we could replace this with `defaultdict(lambda: default)`
     return defaultdict(functools.partial(_default_arg, default))
@@ -28,7 +27,7 @@ def _get_defaultdict(default: T) -> dict[Any, T]:
 class PermuteDimensions(Transform):
     _transformed_types = (is_pure_tensor, tv_tensors.Image, tv_tensors.Video)
 
-    def __init__(self, dims: Union[Sequence[int], dict[type, Optional[Sequence[int]]]]) -> None:
+    def __init__(self, dims: Union[Sequence[int], Dict[Type, Optional[Sequence[int]]]]) -> None:
         super().__init__()
         if not isinstance(dims, dict):
             dims = _get_defaultdict(dims)
@@ -40,7 +39,7 @@ class PermuteDimensions(Transform):
             )
         self.dims = dims
 
-    def transform(self, inpt: Any, params: dict[str, Any]) -> torch.Tensor:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
         dims = self.dims[type(inpt)]
         if dims is None:
             return inpt.as_subclass(torch.Tensor)
@@ -50,7 +49,7 @@ class PermuteDimensions(Transform):
 class TransposeDimensions(Transform):
     _transformed_types = (is_pure_tensor, tv_tensors.Image, tv_tensors.Video)
 
-    def __init__(self, dims: Union[tuple[int, int], dict[type, Optional[tuple[int, int]]]]) -> None:
+    def __init__(self, dims: Union[Tuple[int, int], Dict[Type, Optional[Tuple[int, int]]]]) -> None:
         super().__init__()
         if not isinstance(dims, dict):
             dims = _get_defaultdict(dims)
@@ -62,7 +61,7 @@ class TransposeDimensions(Transform):
             )
         self.dims = dims
 
-    def transform(self, inpt: Any, params: dict[str, Any]) -> torch.Tensor:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
         dims = self.dims[type(inpt)]
         if dims is None:
             return inpt.as_subclass(torch.Tensor)

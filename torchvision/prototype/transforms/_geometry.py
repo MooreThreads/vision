@@ -1,5 +1,4 @@
-from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 import PIL.Image
 import torch
@@ -23,7 +22,7 @@ class FixedSizeCrop(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int]],
-        fill: Union[_FillType, dict[Union[type, str], _FillType]] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         padding_mode: str = "constant",
     ) -> None:
         super().__init__()
@@ -36,7 +35,7 @@ class FixedSizeCrop(Transform):
 
         self.padding_mode = padding_mode
 
-    def check_inputs(self, flat_inputs: list[Any]) -> None:
+    def check_inputs(self, flat_inputs: List[Any]) -> None:
         if not has_any(
             flat_inputs,
             PIL.Image.Image,
@@ -54,7 +53,7 @@ class FixedSizeCrop(Transform):
                 f"{type(self).__name__}() also requires it to contain a Label or OneHotLabel."
             )
 
-    def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         height, width = query_size(flat_inputs)
         new_height = min(height, self.crop_height)
         new_width = min(width, self.crop_width)
@@ -108,7 +107,7 @@ class FixedSizeCrop(Transform):
             needs_pad=needs_pad,
         )
 
-    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_crop"]:
             inpt = self._call_kernel(
                 F.crop,

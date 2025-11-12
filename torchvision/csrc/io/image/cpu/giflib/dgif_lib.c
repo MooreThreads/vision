@@ -1,4 +1,3 @@
-// @nolint (improperly imported third-party code)
 /******************************************************************************
 
 dgif_lib.c - GIF decoding

@@ -1,4 +1,3 @@
-// @nolint (improperly imported third-party code)
 /******************************************************************************
 
 gif_hash.h - magfic constants and declarations for GIF LZW

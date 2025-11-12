@@ -6,7 +6,6 @@ import shlex
 import shutil
 import subprocess
 import sys
-import sysconfig
 import warnings
 from pathlib import Path
 
@@ -14,6 +13,8 @@ import torch
 from pkg_resources import DistributionNotFound, get_distribution, parse_version
 from setuptools import find_packages, setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDA_HOME, CUDAExtension, ROCM_HOME
+
+from musa_utils import make_MUSA_C_extension, make_MUSA_build_ext
 
 FORCE_CUDA = os.getenv("FORCE_CUDA", "0") == "1"
 FORCE_MPS = os.getenv("FORCE_MPS", "0") == "1"
@@ -25,12 +26,12 @@ USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
 # Note: the GPU video decoding stuff used to be called "video codec", which
 # isn't an accurate or descriptive name considering there are at least 2 other
-# video decoding backends in torchvision. I'm renaming this to "gpu video
+# video deocding backends in torchvision. I'm renaming this to "gpu video
 # decoder" where possible, keeping user facing names (like the env var below) to
 # the old scheme for BC.
-USE_GPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "0") == "1"
+USE_GPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "1") == "1"
 # Same here: "use ffmpeg" was used to denote "use cpu video decoder".
-USE_CPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_FFMPEG", "0") == "1"
+USE_CPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_FFMPEG", "1") == "1"
 
 TORCHVISION_INCLUDE = os.environ.get("TORCHVISION_INCLUDE", "")
 TORCHVISION_LIBRARY = os.environ.get("TORCHVISION_LIBRARY", "")
@@ -137,8 +138,6 @@ def get_macros_and_flags():
     if sys.platform == "win32":
         define_macros += [("torchvision_EXPORTS", None)]
         extra_compile_args["cxx"].append("/MP")
-        if sysconfig.get_config_var("Py_GIL_DISABLED"):
-            extra_compile_args["cxx"].append("-DPy_GIL_DISABLED")
 
     if DEBUG:
         extra_compile_args["cxx"].append("-g")
@@ -214,7 +213,7 @@ def find_libpng():
             subprocess.run([libpng_config, "--version"], stdout=subprocess.PIPE).stdout.strip().decode("utf-8")
         )
         if png_version < min_version:
-            warnings.warn(f"libpng version {png_version} is less than minimum required version {min_version}")
+            warnings.warn("libpng version {png_version} is less than minimum required version {min_version}")
             return False, None, None, None
 
         include_dir = (
@@ -273,14 +272,6 @@ def find_library(header):
                 print(f"{searching_for}. Found in {prefix}.")
                 return True, None, None
             print(f"{searching_for}. Didn't find in {prefix}")
-
-    if sys.platform == "darwin":
-        HOMEBREW_PATH = Path("/opt/homebrew")
-        include_dir = HOMEBREW_PATH / "include"
-        library_dir = HOMEBREW_PATH / "lib"
-        if (include_dir / header).exists():
-            print(f"{searching_for}. Found in {include_dir}.")
-            return True, str(include_dir), str(library_dir)
 
     return False, None, None
 
@@ -451,7 +442,7 @@ def make_video_decoders_extensions():
 
         extensions.append(
             CppExtension(
-                # This is an awful name. It should be "cpu_video_decoder". Keeping for BC.
+                # This is an aweful name. It should be "cpu_video_decoder". Keeping for BC.
                 "torchvision.video_reader",
                 combined_src,
                 include_dirs=[
@@ -552,9 +543,11 @@ if __name__ == "__main__":
 
     extensions = [
         make_C_extension(),
+        make_MUSA_C_extension(),
         make_image_extension(),
         *make_video_decoders_extensions(),
     ]
+    build_ext = make_MUSA_build_ext()
 
     setup(
         name=package_name,
@@ -577,7 +570,7 @@ if __name__ == "__main__":
         ext_modules=extensions,
         python_requires=">=3.9",
         cmdclass={
-            "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
+            "build_ext": build_ext.with_options(no_python_abi_suffix=True),
             "clean": clean,
         },
     )

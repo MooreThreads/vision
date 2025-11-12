@@ -13,7 +13,6 @@ import torchvision.transforms._functional_tensor as F_t
 import torchvision.transforms.functional as F
 from PIL import Image
 from torch._utils_internal import get_file_path_2
-from torchvision.utils import _Image_fromarray
 
 try:
     import accimage
@@ -655,7 +654,7 @@ class TestToPil:
         img_F_mode = transforms.ToPILImage(mode="F")(img_data)
         assert img_F_mode.mode == "F"
         torch.testing.assert_close(
-            np.array(_Image_fromarray(img_data.squeeze(0).numpy(), mode="F")), np.array(img_F_mode)
+            np.array(Image.fromarray(img_data.squeeze(0).numpy(), mode="F")), np.array(img_F_mode)
         )
 
     @pytest.mark.parametrize("with_mode", [False, True])
@@ -896,7 +895,7 @@ def test_adjust_brightness():
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
     x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-    x_pil = _Image_fromarray(x_np, mode="RGB")
+    x_pil = Image.fromarray(x_np, mode="RGB")
 
     # test 0
     y_pil = F.adjust_brightness(x_pil, 1)
@@ -922,7 +921,7 @@ def test_adjust_contrast():
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
     x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-    x_pil = _Image_fromarray(x_np, mode="RGB")
+    x_pil = Image.fromarray(x_np, mode="RGB")
 
     # test 0
     y_pil = F.adjust_contrast(x_pil, 1)
@@ -948,7 +947,7 @@ def test_adjust_hue():
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
     x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-    x_pil = _Image_fromarray(x_np, mode="RGB")
+    x_pil = Image.fromarray(x_np, mode="RGB")
 
     with pytest.raises(ValueError):
         F.adjust_hue(x_pil, -0.7)
@@ -1030,7 +1029,7 @@ def test_adjust_sharpness():
         117,
     ]
     x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-    x_pil = _Image_fromarray(x_np, mode="RGB")
+    x_pil = Image.fromarray(x_np, mode="RGB")
 
     # test 0
     y_pil = F.adjust_sharpness(x_pil, 1)
@@ -1153,7 +1152,7 @@ def test_adjust_sharpness():
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
     x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-    x_pil = _Image_fromarray(x_np, mode="RGB")
+    x_pil = Image.fromarray(x_np, mode="RGB")
     x_th = torch.tensor(x_np.transpose(2, 0, 1))
     y_pil = F.adjust_sharpness(x_pil, 2)
     y_np = np.array(y_pil).transpose(2, 0, 1)
@@ -1165,7 +1164,7 @@ def test_adjust_gamma():
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
     x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-    x_pil = _Image_fromarray(x_np, mode="RGB")
+    x_pil = Image.fromarray(x_np, mode="RGB")
 
     # test 0
     y_pil = F.adjust_gamma(x_pil, 1)
@@ -1191,7 +1190,7 @@ def test_adjusts_L_mode():
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
     x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-    x_rgb = _Image_fromarray(x_np, mode="RGB")
+    x_rgb = Image.fromarray(x_np, mode="RGB")
 
     x_l = x_rgb.convert("L")
     assert F.adjust_brightness(x_l, 2).mode == "L"
@@ -1321,7 +1320,7 @@ def test_to_grayscale():
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
     x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-    x_pil = _Image_fromarray(x_np, mode="RGB")
+    x_pil = Image.fromarray(x_np, mode="RGB")
     x_pil_2 = x_pil.convert("L")
     gray_np = np.array(x_pil_2)
 
@@ -1770,7 +1769,7 @@ def test_color_jitter():
     x_shape = [2, 2, 3]
     x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
     x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
-    x_pil = _Image_fromarray(x_np, mode="RGB")
+    x_pil = Image.fromarray(x_np, mode="RGB")
     x_pil_2 = x_pil.convert("L")
 
     for _ in range(10):

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-
-from typing import Any, TypeVar
+from typing import Any, Optional, Sequence, Type, TypeVar, Union
 
 import torch
 from torch.utils._pytree import tree_map
@@ -14,29 +12,29 @@ L = TypeVar("L", bound="_LabelBase")
 
 
 class _LabelBase(TVTensor):
-    categories: Sequence[str] | None
+    categories: Optional[Sequence[str]]
 
     @classmethod
-    def _wrap(cls: type[L], tensor: torch.Tensor, *, categories: Sequence[str] | None) -> L:
+    def _wrap(cls: Type[L], tensor: torch.Tensor, *, categories: Optional[Sequence[str]]) -> L:
         label_base = tensor.as_subclass(cls)
         label_base.categories = categories
         return label_base
 
     def __new__(
-        cls: type[L],
+        cls: Type[L],
         data: Any,
         *,
-        categories: Sequence[str] | None = None,
-        dtype: torch.dtype | None = None,
-        device: torch.device | str | int | None = None,
-        requires_grad: bool | None = None,
+        categories: Optional[Sequence[str]] = None,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: Optional[bool] = None,
     ) -> L:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return cls._wrap(tensor, categories=categories)
 
     @classmethod
     def from_category(
-        cls: type[L],
+        cls: Type[L],
         category: str,
         *,
         categories: Sequence[str],
@@ -58,9 +56,9 @@ class OneHotLabel(_LabelBase):
         cls,
         data: Any,
         *,
-        categories: Sequence[str] | None = None,
-        dtype: torch.dtype | None = None,
-        device: torch.device | str | int | None = None,
+        categories: Optional[Sequence[str]] = None,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> OneHotLabel:
         one_hot_label = super().__new__(

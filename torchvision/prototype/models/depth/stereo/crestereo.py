@@ -1,7 +1,6 @@
 import math
-from collections.abc import Iterable
 from functools import partial
-from typing import Callable, Optional
+from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -50,8 +49,8 @@ class ConvexMaskPredictor(nn.Module):
 def get_correlation(
     left_feature: Tensor,
     right_feature: Tensor,
-    window_size: tuple[int, int] = (3, 3),
-    dilate: tuple[int, int] = (1, 1),
+    window_size: Tuple[int, int] = (3, 3),
+    dilate: Tuple[int, int] = (1, 1),
 ) -> Tensor:
     """Function that computes a correlation product between the left and right features.
 
@@ -87,10 +86,10 @@ def get_correlation(
 
 
 def _check_window_specs(
-    search_window_1d: tuple[int, int] = (1, 9),
-    search_dilate_1d: tuple[int, int] = (1, 1),
-    search_window_2d: tuple[int, int] = (3, 3),
-    search_dilate_2d: tuple[int, int] = (1, 1),
+    search_window_1d: Tuple[int, int] = (1, 9),
+    search_dilate_1d: Tuple[int, int] = (1, 1),
+    search_window_2d: Tuple[int, int] = (3, 3),
+    search_dilate_2d: Tuple[int, int] = (1, 1),
 ) -> None:
 
     if not np.prod(search_window_1d) == np.prod(search_window_2d):
@@ -123,10 +122,10 @@ class IterativeCorrelationLayer(nn.Module):
     def __init__(
         self,
         groups: int = 4,
-        search_window_1d: tuple[int, int] = (1, 9),
-        search_dilate_1d: tuple[int, int] = (1, 1),
-        search_window_2d: tuple[int, int] = (3, 3),
-        search_dilate_2d: tuple[int, int] = (1, 1),
+        search_window_1d: Tuple[int, int] = (1, 9),
+        search_dilate_1d: Tuple[int, int] = (1, 1),
+        search_window_2d: Tuple[int, int] = (3, 3),
+        search_dilate_2d: Tuple[int, int] = (1, 1),
     ) -> None:
 
         super().__init__()
@@ -187,10 +186,10 @@ class AttentionOffsetCorrelationLayer(nn.Module):
         self,
         groups: int = 4,
         attention_module: Optional[nn.Module] = None,
-        search_window_1d: tuple[int, int] = (1, 9),
-        search_dilate_1d: tuple[int, int] = (1, 1),
-        search_window_2d: tuple[int, int] = (3, 3),
-        search_dilate_2d: tuple[int, int] = (1, 1),
+        search_window_1d: Tuple[int, int] = (1, 9),
+        search_dilate_1d: Tuple[int, int] = (1, 1),
+        search_window_2d: Tuple[int, int] = (3, 3),
+        search_dilate_2d: Tuple[int, int] = (1, 1),
     ) -> None:
         super().__init__()
         _check_window_specs(
@@ -565,10 +564,10 @@ class LocalFeatureTransformer(nn.Module):
         *,
         dim_model: int,
         num_heads: int,
-        attention_directions: list[str],
+        attention_directions: List[str],
         attention_module: Callable[..., nn.Module] = LinearAttention,
     ) -> None:
-        super().__init__()
+        super(LocalFeatureTransformer, self).__init__()
 
         self.attention_module = attention_module
         self.attention_directions = attention_directions
@@ -591,7 +590,7 @@ class LocalFeatureTransformer(nn.Module):
         right_features: Tensor,
         left_mask: Optional[Tensor] = None,
         right_mask: Optional[Tensor] = None,
-    ) -> tuple[Tensor, Tensor]:
+    ) -> Tuple[Tensor, Tensor]:
         """
         Args:
             left_features (torch.Tensor): [N, S1, D]
@@ -632,7 +631,7 @@ class PyramidDownsample(nn.Module):
         super().__init__()
         self.factors = factors
 
-    def forward(self, x: torch.Tensor) -> list[Tensor]:
+    def forward(self, x: torch.Tensor) -> List[Tensor]:
         results = [x]
         for factor in self.factors:
             results.append(F.avg_pool2d(x, kernel_size=factor, stride=factor))
@@ -666,12 +665,12 @@ class CREStereo(nn.Module):
         flow_head: raft.FlowHead,
         self_attn_block: LocalFeatureTransformer,
         cross_attn_block: LocalFeatureTransformer,
-        feature_downsample_rates: tuple[int, ...] = (2, 4),
+        feature_downsample_rates: Tuple[int, ...] = (2, 4),
         correlation_groups: int = 4,
-        search_window_1d: tuple[int, int] = (1, 9),
-        search_dilate_1d: tuple[int, int] = (1, 1),
-        search_window_2d: tuple[int, int] = (3, 3),
-        search_dilate_2d: tuple[int, int] = (1, 1),
+        search_window_1d: Tuple[int, int] = (1, 9),
+        search_dilate_1d: Tuple[int, int] = (1, 1),
+        search_window_2d: Tuple[int, int] = (3, 3),
+        search_dilate_2d: Tuple[int, int] = (1, 1),
     ) -> None:
         super().__init__()
         self.output_channels = 2
@@ -683,13 +682,13 @@ class CREStereo(nn.Module):
 
         # average pooling for the feature encoder outputs
         self.downsampling_pyramid = PyramidDownsample(feature_downsample_rates)
-        self.downsampling_factors: list[int] = [feature_encoder.downsample_factor]
+        self.downsampling_factors: List[int] = [feature_encoder.downsample_factor]
         base_downsample_factor: int = self.downsampling_factors[0]
         for rate in feature_downsample_rates:
             self.downsampling_factors.append(base_downsample_factor * rate)
 
         # output resolution tracking
-        self.resolutions: list[str] = [f"1 / {factor}" for factor in self.downsampling_factors]
+        self.resolutions: List[str] = [f"1 / {factor}" for factor in self.downsampling_factors]
         self.search_pixels = int(np.prod(search_window_1d))
 
         # flow convex upsampling mask predictor
@@ -765,7 +764,7 @@ class CREStereo(nn.Module):
 
     def forward(
         self, left_image: Tensor, right_image: Tensor, flow_init: Optional[Tensor] = None, num_iters: int = 10
-    ) -> list[Tensor]:
+    ) -> List[Tensor]:
         features = torch.cat([left_image, right_image], dim=0)
         features = self.feature_encoder(features)
         left_features, right_features = features.chunk(2, dim=0)
@@ -788,7 +787,7 @@ class CREStereo(nn.Module):
         ctx_pyramid = {res: ctx_pyramid[idx] for idx, res in enumerate(self.resolutions)}
 
         # offsets for sampling pixel candidates in the correlation ops
-        offsets: dict[str, Tensor] = {}
+        offsets: Dict[str, Tensor] = {}
         for resolution, offset_conv in self.offset_convs.items():
             feature_map = l_pyramid[resolution]
             offset = offset_conv(feature_map)
@@ -811,8 +810,8 @@ class CREStereo(nn.Module):
         l_pyramid[min_res] = l_pyramid[min_res].reshape(B, MIN_H, MIN_W, C).permute(0, 3, 1, 2)
         r_pyramid[min_res] = r_pyramid[min_res].reshape(B, MIN_H, MIN_W, C).permute(0, 3, 1, 2)
 
-        predictions: list[Tensor] = []
-        flow_estimates: dict[str, Tensor] = {}
+        predictions: List[Tensor] = []
+        flow_estimates: Dict[str, Tensor] = {}
         # we added this because of torch.script.jit
         # also, the predicition prior is always going to have the
         # spatial size of the features outputted by the feature encoder
@@ -846,7 +845,7 @@ class CREStereo(nn.Module):
             # we always need to fetch the next pyramid feature map as well
             # when updating coarse resolutions, therefore we create a reversed
             # view which has its order synced with the ModuleDict keys iterator
-            coarse_resolutions: list[str] = self.resolutions[::-1]  # using slicing because of torch.jit.script
+            coarse_resolutions: List[str] = self.resolutions[::-1]  # using slicing because of torch.jit.script
             fine_grained_resolution = max_res
 
             # set the coarsest flow to the zero flow
@@ -957,27 +956,27 @@ def _crestereo(
     weights: Optional[WeightsEnum],
     progress: bool,
     # Feature Encoder
-    feature_encoder_layers: tuple[int, int, int, int, int],
-    feature_encoder_strides: tuple[int, int, int, int],
+    feature_encoder_layers: Tuple[int, int, int, int, int],
+    feature_encoder_strides: Tuple[int, int, int, int],
     feature_encoder_block: Callable[..., nn.Module],
     feature_encoder_norm_layer: Callable[..., nn.Module],
     # Average Pooling Pyramid
-    feature_downsample_rates: tuple[int, ...],
+    feature_downsample_rates: Tuple[int, ...],
     # Adaptive Correlation Layer
     corr_groups: int,
-    corr_search_window_2d: tuple[int, int],
-    corr_search_dilate_2d: tuple[int, int],
-    corr_search_window_1d: tuple[int, int],
-    corr_search_dilate_1d: tuple[int, int],
+    corr_search_window_2d: Tuple[int, int],
+    corr_search_dilate_2d: Tuple[int, int],
+    corr_search_window_1d: Tuple[int, int],
+    corr_search_dilate_1d: Tuple[int, int],
     # Flow head
     flow_head_hidden_size: int,
     # Recurrent block
     recurrent_block_hidden_state_size: int,
-    recurrent_block_kernel_size: tuple[tuple[int, int], tuple[int, int]],
-    recurrent_block_padding: tuple[tuple[int, int], tuple[int, int]],
+    recurrent_block_kernel_size: Tuple[Tuple[int, int], Tuple[int, int]],
+    recurrent_block_padding: Tuple[Tuple[int, int], Tuple[int, int]],
     # Motion Encoder
-    motion_encoder_corr_layers: tuple[int, int],
-    motion_encoder_flow_layers: tuple[int, int],
+    motion_encoder_corr_layers: Tuple[int, int],
+    motion_encoder_flow_layers: Tuple[int, int],
     motion_encoder_out_channels: int,
     # Transformer Blocks
     num_attention_heads: int,

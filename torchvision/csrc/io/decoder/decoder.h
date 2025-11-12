@@ -56,7 +56,6 @@ class Decoder : public MediaDecoder {
   int* getPrintPrefix() {
     return &printPrefix;
   }
-  double videoDurationMs_ = -1;
 
  private:
   // mark below function for a proper invocation
@@ -77,8 +76,6 @@ class Decoder : public MediaDecoder {
       bool fastSeek = false);
   void flushStreams();
   void cleanUp();
-  bool pushMsg(DecoderOutputMessage&&
-                   msg); // returns whether frame is passed to downstream
 
  protected:
   DecoderParameters params_;
@@ -92,9 +89,5 @@ class Decoder : public MediaDecoder {
   AVIOContext* avioCtx_{nullptr};
   std::unordered_map<ssize_t, std::unique_ptr<Stream>> streams_;
   std::bitset<64> inRange_;
-  int kFramesDecoded_{0};
-  int64_t pastDecodedPTS_{-1};
-  int64_t currentDecodedPTS_{-1};
-  bool doSeek_{false};
 };
 } // namespace ffmpeg

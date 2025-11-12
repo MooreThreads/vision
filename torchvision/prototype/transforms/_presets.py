@@ -2,8 +2,7 @@
 This file is part of the private API. Please do not use directly these classes as they will be modified on
 future versions without warning. The classes should be accessed only via the transforms argument of Weights.
 """
-
-from typing import Optional, Union
+from typing import List, Optional, Tuple, Union
 
 import PIL.Image
 
@@ -22,15 +21,15 @@ class StereoMatching(torch.nn.Module):
         self,
         *,
         use_gray_scale: bool = False,
-        resize_size: Optional[tuple[int, ...]],
-        mean: tuple[float, ...] = (0.5, 0.5, 0.5),
-        std: tuple[float, ...] = (0.5, 0.5, 0.5),
+        resize_size: Optional[Tuple[int, ...]],
+        mean: Tuple[float, ...] = (0.5, 0.5, 0.5),
+        std: Tuple[float, ...] = (0.5, 0.5, 0.5),
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
 
         # pacify mypy
-        self.resize_size: Union[None, list]
+        self.resize_size: Union[None, List]
 
         if resize_size is not None:
             self.resize_size = list(resize_size)
@@ -42,7 +41,7 @@ class StereoMatching(torch.nn.Module):
         self.interpolation = _check_interpolation(interpolation)
         self.use_gray_scale = use_gray_scale
 
-    def forward(self, left_image: Tensor, right_image: Tensor) -> tuple[Tensor, Tensor]:
+    def forward(self, left_image: Tensor, right_image: Tensor) -> Tuple[Tensor, Tensor]:
         def _process_image(img: PIL.Image.Image) -> Tensor:
             if not isinstance(img, Tensor):
                 img = F.pil_to_tensor(img)

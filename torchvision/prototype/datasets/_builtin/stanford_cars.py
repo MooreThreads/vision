@@ -1,6 +1,5 @@
 import pathlib
-from collections.abc import Iterator
-from typing import Any, BinaryIO, Union
+from typing import Any, BinaryIO, Dict, Iterator, List, Tuple, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
@@ -17,11 +16,11 @@ from torchvision.tv_tensors import BoundingBoxes
 from .._api import register_dataset, register_info
 
 
-class StanfordCarsLabelReader(IterDataPipe[tuple[int, int, int, int, int, str]]):
-    def __init__(self, datapipe: IterDataPipe[dict[str, Any]]) -> None:
+class StanfordCarsLabelReader(IterDataPipe[Tuple[int, int, int, int, int, str]]):
+    def __init__(self, datapipe: IterDataPipe[Dict[str, Any]]) -> None:
         self.datapipe = datapipe
 
-    def __iter__(self) -> Iterator[tuple[int, int, int, int, int, str]]:
+    def __iter__(self) -> Iterator[Tuple[int, int, int, int, int, str]]:
         for _, file in self.datapipe:
             data = read_mat(file, squeeze_me=True)
             for ann in data["annotations"]:
@@ -32,7 +31,7 @@ NAME = "stanford-cars"
 
 
 @register_info(NAME)
-def _info() -> dict[str, Any]:
+def _info() -> Dict[str, Any]:
     return dict(categories=read_categories_file(NAME))
 
 
@@ -69,8 +68,8 @@ class StanfordCars(Dataset):
         "car_devkit": "512b227b30e2f0a8aab9e09485786ab4479582073a144998da74d64b801fd288",
     }
 
-    def _resources(self) -> list[OnlineResource]:
-        resources: list[OnlineResource] = [HttpResource(self._URLS[self._split], sha256=self._CHECKSUM[self._split])]
+    def _resources(self) -> List[OnlineResource]:
+        resources: List[OnlineResource] = [HttpResource(self._URLS[self._split], sha256=self._CHECKSUM[self._split])]
         if self._split == "train":
             resources.append(HttpResource(url=self._URLS["car_devkit"], sha256=self._CHECKSUM["car_devkit"]))
 
@@ -82,7 +81,7 @@ class StanfordCars(Dataset):
             )
         return resources
 
-    def _prepare_sample(self, data: tuple[tuple[str, BinaryIO], tuple[int, int, int, int, int, str]]) -> dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[Tuple[str, BinaryIO], Tuple[int, int, int, int, int, str]]) -> Dict[str, Any]:
         image, target = data
         path, buffer = image
         image = EncodedImage.from_file(buffer)
@@ -94,7 +93,7 @@ class StanfordCars(Dataset):
             bounding_boxes=BoundingBoxes(target[:4], format="xyxy", spatial_size=image.spatial_size),
         )
 
-    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
 
         images_dp, targets_dp = resource_dps
         if self._split == "train":
@@ -105,7 +104,7 @@ class StanfordCars(Dataset):
         dp = hint_sharding(dp)
         return Mapper(dp, self._prepare_sample)
 
-    def _generate_categories(self) -> list[str]:
+    def _generate_categories(self) -> List[str]:
         resources = self._resources()
 
         devkit_dp = resources[1].load(self._root)

@@ -1,4 +1,3 @@
-// @nolint (improperly imported third-party code)
 /*
  * SPDX-FileCopyrightText: Copyright (C) 2008 Otto Moerbeek <otto@drijf.net>
  * SPDX-License-Identifier: MIT
