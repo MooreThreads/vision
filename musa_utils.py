@@ -1,7 +1,18 @@
+"""MUSA build utils"""
 from pathlib import Path
+import platform
 
 import torch, torch_musa
 from torch_musa.utils.musa_extension import MUSAExtension, BuildExtension
+
+
+def _get_cpu_arch():
+    if any(x in platform.machine() for x in ["arm", "aarch64"]):
+        return "arm"
+    if any(x in platform.machine() for x in ["x86", "x64"]):
+        return "x86"
+    raise ValueError(f"Unidentified CPU arch: {platform.machine()}")
+
 
 def make_MUSA_build_ext():
     return BuildExtension
@@ -32,13 +43,15 @@ def make_MUSA_C_extension():
         "-fvisibility=hidden",
         "-std=c++17",
         "-Wno-reorder",
-        "-march=native",
         "force_mcc",
     ]
     mcc_flags = [
         "-O3",
-        "-march=native",
     ]
+
+    if _get_cpu_arch() != "arm":
+        cxx_flags.append("-march=native")
+        mcc_flags.append("-march=native")
     
     library_dirs = [torch_musa_dir / "lib"]
     libraries = ["musa_kernels", "musa_python"]
