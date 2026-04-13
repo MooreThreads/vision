@@ -716,13 +716,10 @@ at::Tensor roi_align_backward_kernel(
   auto grad_in_nc = batch_size * channels;
 
   // device info
-  musaDeviceProp device_prop;
-  at::musa::muHandle& h = at::GetMudnnHandle();
-  int device_id = h.GetDeviceId();
-  TORCH_CHECK(
-      musaSuccess == musaGetDeviceProperties(&device_prop, device_id),
-      "musaGetDeviceProperties error");
-  int device_major_version = device_prop.major;
+  
+  const auto* device_prop = at::musa::getCurrentDeviceProperties();
+  int device_major_version = device_prop->major;
+
 
   at::globalContext().alertNotDeterministic("roi_align_backward_kernel");
 
