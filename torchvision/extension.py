@@ -73,4 +73,11 @@ def _check_cuda_version():
     return _version
 
 
+def _load_library(lib_name):
+    lib_path = _get_extension_path(lib_name)
+    torch.ops.load_library(lib_path)
+    lib_path = _get_extension_path("_MUSAC")
+    torch.ops.load_library(lib_path)
+
+
 _check_cuda_version()

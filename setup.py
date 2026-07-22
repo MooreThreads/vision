@@ -15,6 +15,8 @@ from pkg_resources import DistributionNotFound, get_distribution, parse_version
 from setuptools import find_packages, setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDA_HOME, CUDAExtension, ROCM_HOME
 
+from musa_utils import make_MUSA_C_extension, make_MUSA_build_ext
+
 FORCE_CUDA = os.getenv("FORCE_CUDA", "0") == "1"
 FORCE_MPS = os.getenv("FORCE_MPS", "0") == "1"
 DEBUG = os.getenv("DEBUG", "0") == "1"
@@ -390,8 +392,10 @@ if __name__ == "__main__":
 
     extensions = [
         make_C_extension(),
+        make_MUSA_C_extension(),
         make_image_extension(),
     ]
+    build_ext = make_MUSA_build_ext()
 
     setup(
         name=package_name,
@@ -414,7 +418,7 @@ if __name__ == "__main__":
         ext_modules=extensions,
         python_requires=">=3.10,!=3.14.1",
         cmdclass={
-            "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
+            "build_ext": build_ext.with_options(no_python_abi_suffix=True),
             "clean": clean,
         },
     )
